@@ -70,6 +70,48 @@ class InsertingUserDataApiView(APIView):
             print("in exception")
             return Response({'Msg': 'User Not Created ' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class PatchApiView(APIView):
+     def patch(self , request , userID):
+            '''So, if the data is not provided by the user then we have to etuen the status has 400 bad request. If the user has provided 
+            the data what to be changed then we have to take the query  '''
+
+            data = request.data
+            print("1")
+            try :
+                if not data:
+                    return Response({'Msg': 'User Not given the data '}, status=status.HTTP_400_BAD_REQUEST)
+
+                query = ", ".join([f"{key} = %s"for key in data.keys()])
+                print("query", query)
+                values = list(data.values())
+                print("values",values)
+                values.append(userID)
+                
+
+                QUERY = f"UPDATE users SET {query} where userID = %s"
+                print("query",QUERY)
+
+                with connection.cursor() as cursor:
+                    cursor.execute(QUERY, values)
+
+                    return Response({'Msg': 'User data has been updated successfully'}, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'Msg': 'User data has not been updated successfully' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -105,6 +147,3 @@ Returning the Response:
 if row: Checks if a row was fetched from the database.
 If a row is found, it returns a 200 OK response with the message {'Msg': 'User found'}.
 If no row is found, it returns a 404 Not Found response with the message {'Msg': 'User not found'}.'''
-
-
-
