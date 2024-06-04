@@ -28,15 +28,15 @@ class AccountInfo(models.Model):
 
 
 class AccountTransaction(models.Model):
-    account = models.ForeignKey(AccountInfo, on_delete=models.CASCADE)
+    accountnumber = models.ForeignKey(AccountInfo, on_delete=models.CASCADE)
     utr = models.CharField(max_length=22, primary_key=True)
     transactiontype = models.CharField(max_length=4)
-    moneytransferred = models.IntegerField()
-    currentbalance = models.IntegerField(blank=True, null=True)
+    moneytransfered = models.IntegerField()
+    current_balance = models.IntegerField(blank=True, null=True)
     dateoftransaction = models.DateTimeField()
     receivername = models.CharField(max_length=200, blank=True, null=True)
     receiveraccountnumber = models.CharField(max_length=17)
-    receiverifsccode = models.CharField(max_length=11)
+    receiverifcscode = models.CharField(max_length=11)
     Status = models.CharField(max_length=80)
    
 
