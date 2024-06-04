@@ -6,6 +6,7 @@ from rest_framework import status
 from .models import User
 
 
+
 # Create your views here.
 class UserApiView(APIView): 
     def get(self, request): 
@@ -69,6 +70,7 @@ class InsertingUserDataApiView(APIView):
         except Exception as e:
             print("in exception")
             return Response({'Msg': 'User Not Created ' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PatchApiView(APIView):
      def patch(self , request , userID):

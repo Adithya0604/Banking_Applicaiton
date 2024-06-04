@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
+from .views import PostApiView
 
 
 urlpatterns = [
+    path('Money/', PostApiView.as_view(), name='Money-Money'),
 ]

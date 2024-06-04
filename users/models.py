@@ -37,6 +37,8 @@ class AccountTransaction(models.Model):
     receivername = models.CharField(max_length=200, blank=True, null=True)
     receiveraccountnumber = models.CharField(max_length=17)
     receiverifsccode = models.CharField(max_length=11)
+    Status = models.CharField(max_length=80)
+   
 
     class Meta:
         db_table = "account_transaction"
