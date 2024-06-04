@@ -78,15 +78,12 @@ class PatchApiView(APIView):
             the data what to be changed then we have to take the query  '''
 
             data = request.data
-            print("1")
             try :
                 if not data:
                     return Response({'Msg': 'User Not given the data '}, status=status.HTTP_400_BAD_REQUEST)
 
                 query = ", ".join([f"{key} = %s"for key in data.keys()])
-                print("query", query)
                 values = list(data.values())
-                print("values",values)
                 values.append(userID)
                 
 

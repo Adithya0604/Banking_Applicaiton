@@ -6,25 +6,44 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.timezone import now
+import uuid , datetime
 from users.models import User, AccountTransaction, AccountInfo
 
 # Create your views here.
 
 class PostApiView(APIView):
+
+    # @ generated the UTR for ever transaction 
+    def generate_utr(self):
+        now = datetime.datetime.now()
+        timestamp = now.strftime('%Y%m%d%H%M%S')
+        random_part = uuid.uuid4().hex[:8].upper()  # 6-character random part
+        return  f"{timestamp}{random_part}"
+    
+    
+
     def post(self , request):
     
         #loading the details from the user
-        try:
-            data = request.data
-            userID = data.get('userID')
-            AccountNo = data.get('AccountNumber')
-            Moneytransfered = data.get('moneytransferred')
-                
-        except (KeyError, ValueError):
-            return Response({'Msg': 'Data not provided or invalid format', 'Error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ------ More use of TRY and CATCH --------
+        # @ Masking Errors: Can hide underlying issues, making debugging difficult.
+        # @ Performance Overhead: Introduces some performance cost.
+        # @ Complexity: Makes code harder to read and maintain.
+        # @ Improper Handling: Catching general exceptions can lead to poor error handling.
+        # @ Encourages Bad Practices: Can lead to poor coding practices like using it for flow control.
+
+        data = request.data
+        userID = data.get('userID')
+        AccountNo = data.get('AccountNumber')
+        Moneytransfered = data.get('moneytransferred')
+        ReciverName = data.get('receivername')
+        ReciverAccountNumber = data.get('receiveraccountnumber')
+        ReciverIFSCode = data.get('receiverifcscode')
 
 
-        #cheking user exist or not
+
+        #checking user exist or not
         try:
             with connection.cursor() as cursor: 
 
@@ -57,16 +76,28 @@ class PostApiView(APIView):
                         # 1. if the current balance >= moneytraffered
                         # 2. if the MT is > 0
                     
-                    if db_account_no and db_current_bal:
+                    # @ has been handled here
+                    if db_account_no is None or db_current_bal is None:
+                        return Response({'Msg': 'Please Check CurrentBalance or AccountNumber.'}, status=status.HTTP_400_BAD_REQUEST)
+                    else:
                         if db_current_bal >= Moneytransfered:
-                            new_balance = db_current_bal - Moneytransfered  
+                            print(db_current_bal, type(db_current_bal), type(Moneytransfered))
+                            new_balance = db_current_bal - Moneytransfered 
+                            UTR = self.generate_utr()
 
                             query = '''
                                 INSERT INTO account_transaction (accountnumber,utr ,current_balance ,dateoftransaction ,receivername  ,receiveraccountnumber, receiverifcscode, moneytransfered, transactiontype, status)
                                 VALUES (%s, %s, %s, %s ,%s, %s ,%s, %s ,%s, %s)
                             '''
-                            cursor.execute(query, [AccountNo,'4160416041601' , new_balance , now() , data.get('ReciverName') , data.get('ReciverAccountNumber') , data.get('ReciverIFSCode'), Moneytransfered, 'Deb', 'processing']) 
+                           
+                            cursor.execute(query, [AccountNo, UTR , new_balance , now() , ReciverName , ReciverAccountNumber , ReciverIFSCode, Moneytransfered, 'Cred', 'processing']) 
+                            # every time the utr change because changed 
 
+                            Update_query = '''
+                            UPDATE account_info SET currentbalance = %s where accountnumber = %s
+                            '''
+
+                            cursor.execute(Update_query , [ new_balance , AccountNo])
 
                             return Response({'Msg': 'Transaction initiated successfully, process is in progress'}, status=status.HTTP_200_OK)
                         else:
@@ -74,50 +105,48 @@ class PostApiView(APIView):
 
 
         except Exception as e:
-            return Response({'Msg': 'Transaction failed, please try again', 'Error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-                    #  if true
-                    #  update current balance and use status as processing, 
-                    #  insert the record into account transaction table. 
-                    #  if inserted succesfully give the succes response to user saying process initiated. 
-                    #  else transaction intiation failed. 
-
-
-        # return Response({'Msg': 'Account information found'}, status=status.HTTP_200_OK)
+            return Response({'Msg': 'Transaction failed, please try again', 'Error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
     
 
+# 1. utr is manual as of now use uuid to generate UTR (DONE)
+# 2. handle negitive senarios  (DONE)
+# 3. why should we not have amny try catches (DONE)
+# 4. updating the variables (DONE)
+
+# -------(DONE)-------
+# write a patch API for the transaction
+# 1. one thing we need to do is to update the status of the tranaction -> to success or to failure 
+# 2. if you are updating to failure should we need UTR ? so we need to update UTR to '' or None chcek what suits the best 
+# 4. if we are updating to success we only need to update status. 
+
+# as of now only do this and come to me 
+# how much time will you take ? 1.5 hrs from now 
+
+class PatchApiView(APIView):
+    def patch(self , request):
+
+        data = request.data
+        utr = data.get("utr")
+        Status = data.get("status")
+        transaction_flag= data.get("transaction_flag")
 
 
+        try:
+            if not data:
+                return Response({'Msg': 'User Not given the data '}, status=status.HTTP_400_BAD_REQUEST)
 
-        # if not User.objects.filter(userID=userID).exists():
-        #     return Response({'Msg': 'User ID does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-        # else:
-        #     # If user exist check account number exist or not
-        #     try:
-        #         account_info = AccountInfo.objects.get(userID=userID , AccountNumber=account_no)
-        #     except AccountInfo.DoesNotExist:
-        #         return Response({'Msg': 'Account information not found for the user'}, status=status.HTTP_400_BAD_REQUEST)
+            print(transaction_flag)
 
-        # An user can have many accounts so check which account 
-        # for account_info in accounts_info:
-        #     if account_info.AccountNumber == AccountNo:
-        #         flag = True
-        #         # account number matching & checking Money transfer == 0 or not.
-        #         if flag:
-        #             if not Moneytransfered or Moneytransfered <= 0 :
-        #                 return Response({'Msg':'Please transfer money first!!!' , status:status.HTTP_400_BAD_REQUEST})
-        #         else:
-        #             # Money transfer != 0. CB check with MT. CB < MT not valid.
-        #             try:
-        #                 if currentbalance < Moneytransfered:
-        #                     return Response({'Msg':'Current Balance is less!!!' , status:status.HTTP_400_BAD_REQUEST})
-        #                 else:
-        #                     # CB >= MT. transfer the money and update the CB and save the details in Transaction table
-        #                     currentbalance = currentbalance - Moneytransfered
-        #                     AccountTransaction.save()
-        #             # handling concurrent transaction issues
-        #             except django.db.StaleObjectUpdate: 
-        #                 return Response({'Msg': 'Concurrent transaction occurred, please try again'}, status=status.HTTP_409_CONFLICT)
-        #     else:
-        #         return Response({'Msg': 'Account number is not valid'}, status=status.HTTP_400_BAD_REQUEST)
+            if transaction_flag:
+                print("in here")
+                Query = f"UPDATE account_transaction SET status = %s where utr = %s"
+
+                with connection.cursor() as cursor:
+                    cursor.execute(Query, [Status , utr])
+
+                return Response({'Msg':'Transaction status updated'},status=status.HTTP_200_OK )
+            else:
+                 return Response({'Msg': 'Please Transaction is not updated sucessfully '}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'Msg': 'User data has not been updated successfully' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
