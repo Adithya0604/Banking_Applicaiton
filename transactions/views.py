@@ -135,10 +135,7 @@ class PatchApiView(APIView):
             if not data:
                 return Response({'Msg': 'User Not given the data '}, status=status.HTTP_400_BAD_REQUEST)
 
-            print(transaction_flag)
-
             if transaction_flag:
-                print("in here")
                 Query = f"UPDATE account_transaction SET status = %s where utr = %s"
 
                 with connection.cursor() as cursor:
@@ -149,4 +146,21 @@ class PatchApiView(APIView):
                  return Response({'Msg': 'Please Transaction is not updated sucessfully '}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'Msg': 'User data has not been updated successfully' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# things to do 
+'''
+1. write a get API to fetch tranaction details input : UTR 
+2. input : account_number 
+3 . code wil be full stoped 
+'''
+
+# Full decusion of the project 
+
+# total SQL every minute detail (query part is ****) days :- (2 weeks + 1 extra). 
+
+# what is the purpose of the project ....... 
+# Total report of the porject 
+# DSA compalsory 
+# 
 
