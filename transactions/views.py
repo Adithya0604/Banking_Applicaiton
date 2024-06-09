@@ -162,5 +162,81 @@ class PatchApiView(APIView):
 # what is the purpose of the project ....... 
 # Total report of the porject 
 # DSA compalsory 
-# 
+
+
+class GetApiView(APIView):
+    def get(self , request):
+        UTR = request.query_params.get('utr')
+        AccountNumber = request.query_params.get('accountnumber')
+
+        # @1 getting the request from the API of UTR and AccNum
+
+        if not AccountNumber:
+            return Response({'Msg': 'AccountNumber not FOUND!!!'}, status=status.HTTP_404_BAD_REQUEST)
+
+        # @2 If the AccNum is not given then error for not given AccNum. 
+
+
+        if UTR:
+            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and utr = %s and status = 'Sucess' "
+            # accountnumber, 
+            # utr, 
+            # transactiontype, 
+            # moneytransfered, 
+            # current_balance, 
+            # dateoftransaction, 
+            # receivername, 
+            # receiveraccountnumber, 
+            # receiverifcscode, 
+            # status    
+            param = [AccountNumber , UTR]        
+        
+        # @3 IF UTR gievn then check for the details of the user for that particular UTR. Getting the required details by both querys's
+
+        else:
+            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and status = 'Failure' "
+            
+            # SELECT 
+            # accountnumber, 
+            # utr, 
+            # transactiontype, 
+            # moneytransfered, 
+            # current_balance, 
+            # dateoftransaction, 
+            # receivername, 
+            # receiveraccountnumber, 
+            # receiverifcscode, 
+            # status  
+            # FROM account_transaction WHERE accountnumber = %s and status = 'Failure' '''
+            param = [AccountNumber]
+        
+        # @4 If UTR not given then check for the transaction where status is Failure.
+
+        with connection.cursor() as cursor: 
+            cursor.execute(query , param)
+            row = cursor.fetchone()
+        
+        # @5 connecting with DB for getting the information of the query
+
+            if row:            
+                Details = {
+                    "accountnumber" : row[0],
+                    "utr" : row[1],
+                    "transactiontype" : row[2],
+                    "moneytransfered" : row[3],
+                    "current_balance" : row[4],
+                    "dateoftransaction" : row[5],
+                    "receivername" : row[6],
+                    "receiveraccountnumber" : row[7],
+                    "receiverifcscode" : row[8],
+                    "status" : row[9]
+                }
+
+                return Response(Details, status=status.HTTP_200_OK)
+            else:
+                return Response({'Msg': 'Transaction details are not found'}, status=status.HTTP_404_BAD_REQUEST)
+
+        # @6 If the row is not NONE then we are giving the details dict where we have to get all the required column of the particular transaction otherwise error.
+
+
 
