@@ -239,4 +239,49 @@ class GetApiView(APIView):
         # @6 If the row is not NONE then we are giving the details dict where we have to get all the required column of the particular transaction otherwise error.
 
 
+# ------- Getting all the transaction details of that particular Account by only AccNum from the user in the dict 
+class GETApiView(APIView):
+    def get(self , request):
+        AccountNumber = request.query_params.get('accountnumber')
 
+        if not AccountNumber:
+            return Response({'Msg': 'AccountNumber not FOUND!!!'}, status=status.HTTP_404_BAD_REQUEST)
+        else :
+            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and (status = 'Sucess'  or status = 'Failure' or status = 'processing') "
+            # accountnumber, 
+            # utr, 
+            # transactiontype, 
+            # moneytransfered, 
+            # current_balance, 
+            # dateoftransaction, 
+            # receivername, 
+            # receiveraccountnumber, 
+            # receiverifcscode, 
+            # status    
+            param = [AccountNumber]  
+
+        
+        with connection.cursor() as cursor: 
+            cursor.execute(query , param)
+            rows = cursor.fetchall()
+
+            if rows:
+                AllTransactions = []            
+                for row in rows:
+                    Details = {
+                    "accountnumber" : row[0],
+                    "utr" : row[1],
+                    "transactiontype" : row[2],
+                    "moneytransfered" : row[3],
+                    "current_balance" : row[4],
+                    "dateoftransaction" : row[5],
+                    "receivername" : row[6],
+                    "receiveraccountnumber" : row[7],
+                    "receiverifcscode" : row[8],
+                    "status" : row[9]
+                    }
+                    AllTransactions.append(Details)
+
+                return Response(AllTransactions, status=status.HTTP_200_OK)
+            else:
+                return Response({'Msg': 'Transaction details are not found'}, status=status.HTTP_404_BAD_REQUEST)
