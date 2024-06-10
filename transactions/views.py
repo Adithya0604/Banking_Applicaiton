@@ -147,7 +147,7 @@ class PatchApiView(APIView):
         except Exception as e:
             return Response({'Msg': 'User data has not been updated successfully' , 'Error' : str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
+# ------ DONE ------
 # things to do 
 '''
 1. write a get API to fetch tranaction details input : UTR 
@@ -178,7 +178,7 @@ class GetApiView(APIView):
 
 
         if UTR:
-            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and utr = %s and status = 'Sucess' "
+            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and utr = %s and (status = 'Sucess'  or status = 'Failure') "
             # accountnumber, 
             # utr, 
             # transactiontype, 
@@ -193,22 +193,22 @@ class GetApiView(APIView):
         
         # @3 IF UTR gievn then check for the details of the user for that particular UTR. Getting the required details by both querys's
 
-        else:
-            query = " SELECT * FROM account_transaction WHERE accountnumber = %s and status = 'Failure' "
+        # else:
+        #     query = " SELECT * FROM account_transaction WHERE accountnumber = %s and utr = %s and status = 'Failure' "
             
-            # SELECT 
-            # accountnumber, 
-            # utr, 
-            # transactiontype, 
-            # moneytransfered, 
-            # current_balance, 
-            # dateoftransaction, 
-            # receivername, 
-            # receiveraccountnumber, 
-            # receiverifcscode, 
-            # status  
-            # FROM account_transaction WHERE accountnumber = %s and status = 'Failure' '''
-            param = [AccountNumber]
+        #     # SELECT 
+        #     # accountnumber, 
+        #     # utr, 
+        #     # transactiontype, 
+        #     # moneytransfered, 
+        #     # current_balance, 
+        #     # dateoftransaction, 
+        #     # receivername, 
+        #     # receiveraccountnumber, 
+        #     # receiverifcscode, 
+        #     # status  
+        #     # FROM account_transaction WHERE accountnumber = %s and status = 'Failure' '''
+        #     param = [AccountNumber]
         
         # @4 If UTR not given then check for the transaction where status is Failure.
 
