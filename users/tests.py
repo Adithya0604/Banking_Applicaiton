@@ -24,22 +24,22 @@ class UserGetAPITest(TestCase):
             ])
 
     def test_valid_user(self):
-        response = self.client.get('self.urls', {'id': 1})
+        response = self.client.get(self.urls, {'id': 1})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['User']['FirstName'], "John")
 
     def test_user_not_found(self):
-        response = self.client.get('self.urls', {'id': 999})
+        response = self.client.get(self.urls, {'id': 999})
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()['Msg'], "User Not Found")
 
     def test_user_id_missing(self):
-        response = self.client.get('self.urls')
+        response = self.client.get(self.urls)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['Msg'], "User ID not provided")
 
     def test_user_id_invalid(self):
-        response = self.client.get('self.urls', {'id': 'abc'})
+        response = self.client.get(self.urls, {'id': 'abc'})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['Msg'], "Invalid User ID")
 
