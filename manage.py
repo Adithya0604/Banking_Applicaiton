@@ -20,3 +20,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # /Users/sharmaadithya/Banking_Applicaiton/manage.py

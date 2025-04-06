@@ -1,0 +1,15 @@
+{
+                                        "sqltools.connections": [
+                                                                                {
+                                                                                                                        "previewLimit": 50,
+                                                                                                                        "server": "localhost",
+                                                                                                                        "port": 5432,
+                                                                                                                        "driver": "PostgreSQL",
+                                                                                                                        "name": "PSQL local",
+                                                                                                                        "database": "Banking",
+                                                                                                                        "username": "sharmaadithya",
+                                                                                                                        "password": "xyz123",
+                                                                                                                        "connectionTimeout": 40
+                                                                                }
+                                        ]
+}

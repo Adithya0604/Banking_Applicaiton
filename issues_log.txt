@@ -1,0 +1,125 @@
+Issue No. | Error Message / Issue                                      | Commands Used                              | Solution / Fix
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1         | NodeNotFoundError: Migration users.0004...                | python manage.py migrate users 0001 --fake  | Migration dependency issue, resolved by faking the migration.
+2         | No such file or directory: manage.py                      | python manage.py migrate users zero --fake  | Wrong directory, navigated back to the project folder.
+3         | Your models have changes that are not yet reflected       | python manage.py makemigrations users       | Created fresh migrations to sync DB changes.
+4         | IntegrityError: duplicate key value violates constraint   | python manage.py migrate users --fake-initial | Used fake-initial to skip duplicate table creation.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------***User Details Retrivel***------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Users --> User creating API  {""" API/Endpoints --> curl -X GET 'http://localhost:8000/users/?id=1' """}
+🔢 No. | 🔍 Topic / Issue                   | 🧨 Problem / Cause                                                   | ✅ Solution                                                         | 💡 Tip / Lesson
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1      | Missing Field in API Response     | DB returned `firstname`, but model expected `FirstName`             | Used `user.get('FirstName') or user.get('firstname')`              | Always use fallbacks when field names may vary in case
+2      | API Crashing on Date Field        | `DOB` was a `datetime.date` object which JSON can’t serialize       | Wrapped with `str()`: `str(user.get('DOB'))`                       | Always convert date/datetime objects to strings before sending in JSON
+3      | Inconsistent Key Casing from DB   | DB columns returned keys in lowercase (e.g., `phonenumber`)         | Mapped all fields using `.get()` with fallback to lowercase        | Normalize field names to match your model or serializer keys
+4      | API not returning proper errors   | Missing or invalid `id` caused unclear or no response               | Added checks for `if not user_id` and `try-except` for `int()`     | Always validate request parameters and handle bad input clearly
+5      | Tests seemed “silent”             | Django tests passed silently; no output seen                         | Only `print()` was in view, not in the test itself                 | Add `print()` or `assert` statements inside test cases for clarity
+6      | Unexpected mismatch handling      | Assumed DB keys match model field case, but they didn’t             | Used fallback mapping (`or`) in dictionary                         | Don’t assume DB keys always match your expected model keys
+7      | No clue why something broke       | Missing logs/debug statements                                        | Added `print("Raw user data:", user)` and other debug prints       | Always log or print important steps during development/debugging
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------***User Creation ***------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Users --> User data Post API 
+Step    Description                             Purpose                                             Before                                                After / Fix
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1       Validated required fields from JSON     To ensure all necessary fields are present          Used wrong key names like "Firstname"                Fixed key names to match exact JSON input (e.g., "FirstName", "LastName")
+2       Added missing_fields logic              To detect and report which fields are missing       Caused false errors due to mismatched keys          Now accurately detects missing fields using exact keys
+3       Checked if phone already exists         Prevent duplicate user creation                     None or minimal check                               Used User.objects.filter(PhoneNumber=CellNumber).exists()
+4       Safely parsed DOB                       Prevent crashes from invalid/missing date format    Might fail on invalid date string                   Used datetime.strptime with fallback handling
+5       Used transaction.atomic()               Ensures atomic DB operation (rollback on error)     Not used                                            Added at start of post() method
+6       Correct key access in user creation     Avoid data mismatch due to wrong key casing         Mismatch in key casing (e.g. firstname)             Used correct keys like data.get('FirstName') directly from JSON
+7       Improved response messages              Clearer frontend/backend communication              Vague or misleading responses                       Used meaningful messages (e.g., "User created successfully")
+8       Commented debug logs                    Help debugging during dev without affecting prod    Uncontrolled print statements                       Replaced with commented # print(...) lines
+
+
+API EndPoint :- { --> --> --> --> --> --> --> --> --> --> --> 
+curl -X POST http://localhost:8000/users/create-user/ \ 
+>  -H "Content-Type: application/json" \
+> -d '{ 
+    "FirstName": "Santhosh",
+    "LastName": "Sharma",
+    "PhoneNumber": "9876543218",
+    "DOB": "1960-03-11",
+    "MailID": "SS@gmail.com",
+    "Address": "Shivaji Nagar, Nizamabad",
+    "state": "Nizamabad, Telagana"
+  }'
+{"Msg":"User created successfully"}%   
+<-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- <-- } 
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------***Status Code For API Responces***-------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Status Codes --> 
+HTTP Status Code Reference
+────────────────────────────────────────────────────────────────────────────
+Code     Category        Meaning                          Reason / Use Case
+────────────────────────────────────────────────────────────────────────────
+1xx - Informational
+100      Continue         Initial part of request received, continue sending
+101      Switching Prot.  Server agrees to switch protocols (WebSocket, etc.)
+102      Processing       Server received and is processing (WebDAV)
+
+2xx - Success
+200      OK               Request successful, data returned as expected
+201      Created          New resource successfully created
+202      Accepted         Request accepted for processing (async), not done yet
+204      No Content       Request succeeded, no content to return (e.g., DELETE)
+
+3xx - Redirection
+301      Moved Permanently  Resource permanently moved to a new URI
+302      Found              Resource temporarily moved to another URI
+303      See Other          Use GET on another URI to access resource
+304      Not Modified       Resource hasn't changed since last request (cache)
+307      Temporary Redirect Same as 302 but method must not change (e.g., POST stays POST)
+308      Permanent Redirect Same as 301 but method must not change
+
+4xx - Client Errors
+400      Bad Request        Invalid request syntax or missing data
+401      Unauthorized       Authentication required or failed
+403      Forbidden          Valid request, but user lacks permission
+404      Not Found          Resource not found on server
+405      Method Not Allowed HTTP method not supported (e.g., PUT on a GET-only route)
+409      Conflict           Conflict with current state (e.g., duplicate data)
+410      Gone               Resource was deleted and is no longer available
+422      Unprocessable Entity Valid JSON, but semantically incorrect (validation failed)
+
+5xx - Server Errors
+500      Internal Server Error Unexpected server error
+501      Not Implemented     Server doesn’t recognize method or lacks ability
+502      Bad Gateway         Invalid response from upstream server
+503      Service Unavailable Server down or overloaded
+504      Gateway Timeout     Timeout from upstream server
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------***Patch Work For User Details***---------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Patch API work -->  http://localhost:8000/users/update-user/11/
+Component                     | Original Issue                                       | Solution                                              | Details/Explanation                                                                                   | Missing/To Do
+------------------------------|------------------------------------------------------|-------------------------------------------------------|-------------------------------------------------------------------------------------------------------|---------------------------------------
+Email Validation               | Django's ValidationError propagating instead of custom error | Catch the exception specifically and re-raise with custom message | The validate_email() function was throwing its own error message instead of using the custom one defined in the code | Ensure all validation errors are consistent across fields.
+Error Handling in PATCH        | Not properly capturing validation errors             | Update error handling to catch ValidationError exceptions | The PATCH request wasn’t handling validation errors properly, causing unexpected behavior. The error handling was adjusted to use a try-except pattern to capture validation errors. | Review if other request types (e.g., POST, PUT) need similar error handling improvements.
+Field Validations              | All field validations were correctly defined but errors were not caught | No changes needed to validation logic, only to error handling | Each field had appropriate type and format checks (e.g., email format, phone number), but the error handling was not capturing the invalid inputs properly. | Ensure field validations consider additional edge cases (e.g., non-ASCII characters, empty fields).
+Custom Error Messages          | Default error messages from Django were shown        | Introduced custom error messages for each field validation | Custom error messages were added to enhance user experience and give more meaningful feedback for incorrect input. | Confirm that custom error messages are being properly shown for all fields.
+Validation Consistency         | Inconsistent error responses across fields          | Ensured all fields return consistent validation error handling | Field validation was inconsistent in terms of error responses. Standardized error responses were introduced across the API. | Check if any specific fields are missing validation checks (e.g., date fields).
+Error Logging                  | No logging for validation errors                     | Added logging for validation errors                    | Added a logging mechanism for validation errors, making it easier to debug and monitor issues in production. | Ensure error logs are reviewed regularly and are detailed enough to diagnose issues.
+
+
+customed in terminal -->
+"---->   curl -X PATCH http://localhost:8000/users/update-user/11/ \
+-H "Content-Type: application/json" \
+-d '{
+"PhoneNumber": "6301652296"   
+}'
+{"Msg":"User data updated successfully"}%   <----"      
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
